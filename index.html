@@ -273,6 +273,38 @@
             font-variant-numeric: tabular-nums;
         }
 
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .footer-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .footer-text {
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+
+        .footer-text a {
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .chains {
@@ -509,6 +541,13 @@
                 </div>
             </div>
         </div>
+
+        <footer class="footer">
+            <a href="https://x.com/DanielVF" target="_blank" rel="noopener noreferrer" aria-label="Visit Daniel Von Fange's X profile">
+                <img src="https://avatars.githubusercontent.com/u/213338" alt="Daniel Von Fange" class="footer-avatar">
+            </a>
+            <span class="footer-text">by <a href="https://x.com/DanielVF" target="_blank" rel="noopener noreferrer">Daniel Von Fange</a></span>
+        </footer>
     </div>
 
     <script>
