@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Growth Economics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0E091C;
+            --fg: #DDD7FE;
+            --muted: #9990B8;
+            --card-bg: #1A1329;
+            --cyan: #85E6FF;
+            --pink: #FF8EE4;
+            --orange: #FFAE45;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: var(--fg);
+        }
+
+        .chains {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .chain {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chain-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            padding-bottom: 10px;
+        }
+
+        .chain.ethereum .chain-header {
+            color: var(--cyan);
+        }
+
+        .chain.monad .chain-header {
+            color: var(--pink);
+        }
+
+        /* Output Cards */
+        .outputs {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .output-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chain.ethereum .output-card {
+            box-shadow: 0 0 30px rgba(133, 230, 255, 0.15), 0 0 60px rgba(133, 230, 255, 0.05);
+        }
+
+        .chain.monad .output-card {
+            box-shadow: 0 0 30px rgba(255, 142, 228, 0.15), 0 0 60px rgba(255, 142, 228, 0.05);
+        }
+
+        .output-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .output-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chain.ethereum .output-value {
+            color: var(--cyan);
+        }
+
+        .chain.monad .output-value {
+            color: var(--pink);
+        }
+
+        /* Input Forms */
+        .inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .input-row label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-wrapper input {
+            width: 100px;
+            padding: 8px 12px;
+            background: var(--card-bg);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--fg);
+            font-size: 0.875rem;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            -moz-appearance: textfield;
+        }
+
+        .input-wrapper input::-webkit-outer-spin-button,
+        .input-wrapper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+        }
+
+        .chain.ethereum .input-wrapper input:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px rgba(133, 230, 255, 0.2);
+        }
+
+        .chain.monad .input-wrapper input:focus {
+            border-color: var(--pink);
+            box-shadow: 0 0 0 2px rgba(255, 142, 228, 0.2);
+        }
+
+        .input-unit {
+            font-size: 0.75rem;
+            color: var(--muted);
+            min-width: 50px;
+        }
+
+        /* Shared Parameters */
+        .shared {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(255, 174, 69, 0.3);
+            box-shadow: 0 0 30px rgba(255, 174, 69, 0.05);
+        }
+
+        .shared-header {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--orange);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .shared-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px 48px;
+        }
+
+        .shared .input-row {
+            justify-content: flex-start;
+        }
+
+        .shared .input-wrapper input:focus {
+            border-color: var(--orange);
+            box-shadow: 0 0 0 2px rgba(255, 174, 69, 0.2);
+        }
+
+        /* Derived Stats */
+        .derived {
+            margin-top: 40px;
+        }
+
+        .derived-header {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .derived-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .derived-chain {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .derived-chain-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .derived-chain.ethereum .derived-chain-header {
+            color: var(--cyan);
+        }
+
+        .derived-chain.monad .derived-chain-header {
+            color: var(--pink);
+        }
+
+        .derived-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+        }
+
+        .derived-row .label {
+            color: var(--muted);
+        }
+
+        .derived-row .value {
+            color: var(--fg);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chains {
+                grid-template-columns: 1fr;
+            }
+
+            .output-value {
+                font-size: 2rem;
+            }
+
+            .shared-inputs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .derived-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>State Growth Economics</h1>
+
+        <div class="chains">
+            <!-- Ethereum -->
+            <div class="chain ethereum">
+                <div class="chain-header">Ethereum</div>
+
+                <div class="outputs">
+                    <div class="output-card">
+                        <div class="output-label">Storage Gas Fee Revenue Per Year</div>
+                        <div class="output-value" id="eth-fee-revenue">$0</div>
+                    </div>
+                    <div class="output-card">
+                        <div class="output-label">Lifetime Cost of Annual State Growth</div>
+                        <div class="output-value" id="eth-infra-cost">$0</div>
+                    </div>
+                </div>
+
+                <div class="inputs">
+                    <div class="input-row">
+                        <label>Token Price</label>
+                        <div class="input-wrapper">
+                            <span class="input-unit">$</span>
+                            <input type="text" id="eth-token-price" value="3,200">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Base Fee</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-base-fee" value="0.5">
+                            <span class="input-unit">gwei</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Storage Gas</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-storage-gas" value="23,520">
+                            <span class="input-unit">gas/slot</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Block Size</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-block-size" value="60">
+                            <span class="input-unit">M gas</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Block Time</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-block-time" value="12">
+                            <span class="input-unit">seconds</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>State Write %</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-state-pct" value="50">
+                            <span class="input-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Nodes</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="eth-nodes" value="10,000">
+                            <span class="input-unit">nodes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monad -->
+            <div class="chain monad">
+                <div class="chain-header">Monad</div>
+
+                <div class="outputs">
+                    <div class="output-card">
+                        <div class="output-label">Storage Gas Fee Revenue Per Year</div>
+                        <div class="output-value" id="monad-fee-revenue">$0</div>
+                    </div>
+                    <div class="output-card">
+                        <div class="output-label">Lifetime Cost of Annual State Growth</div>
+                        <div class="output-value" id="monad-infra-cost">$0</div>
+                    </div>
+                </div>
+
+                <div class="inputs">
+                    <div class="input-row">
+                        <label>Token Price</label>
+                        <div class="input-wrapper">
+                            <span class="input-unit">$</span>
+                            <input type="text" id="monad-token-price" value="0.03">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Base Fee</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-base-fee" value="100">
+                            <span class="input-unit">gwei</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Storage Gas</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-storage-gas" value="30,000">
+                            <span class="input-unit">gas/slot</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Block Size</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-block-size" value="200">
+                            <span class="input-unit">M gas</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Block Time</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-block-time" value="0.4">
+                            <span class="input-unit">seconds</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>State Write %</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-state-pct" value="50">
+                            <span class="input-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label>Nodes</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="monad-nodes" value="1,000">
+                            <span class="input-unit">nodes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Parameters -->
+        <div class="shared">
+            <div class="shared-header">Shared Parameters</div>
+            <div class="shared-inputs">
+                <div class="input-row">
+                    <label>Drive Cost</label>
+                    <div class="input-wrapper">
+                        <span class="input-unit">$</span>
+                        <input type="text" id="drive-cost" value="120">
+                        <span class="input-unit">/TB</span>
+                    </div>
+                </div>
+                <div class="input-row">
+                    <label>Lifetime Multiplier</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="lifetime-mult" value="5">
+                        <span class="input-unit">x</span>
+                    </div>
+                </div>
+                <div class="input-row">
+                    <label>Disk Overhead</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="disk-overhead" value="128">
+                        <span class="input-unit">bytes/slot</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Derived Stats -->
+        <div class="derived">
+            <div class="derived-header">Derived Statistics</div>
+            <div class="derived-columns">
+                <div class="derived-chain ethereum">
+                    <div class="derived-chain-header">Ethereum</div>
+                    <div class="derived-row">
+                        <span class="label">Blocks per Year</span>
+                        <span class="value" id="eth-blocks-year">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Writes per Block</span>
+                        <span class="value" id="eth-writes-block">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Writes per Year</span>
+                        <span class="value" id="eth-writes-year">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Storage Growth per Year</span>
+                        <span class="value" id="eth-storage-growth">0</span>
+                    </div>
+                </div>
+                <div class="derived-chain monad">
+                    <div class="derived-chain-header">Monad</div>
+                    <div class="derived-row">
+                        <span class="label">Blocks per Year</span>
+                        <span class="value" id="monad-blocks-year">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Writes per Block</span>
+                        <span class="value" id="monad-writes-block">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Writes per Year</span>
+                        <span class="value" id="monad-writes-year">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Storage Growth per Year</span>
+                        <span class="value" id="monad-storage-growth">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+
+        // Get all input elements
+        const inputs = {
+            // Ethereum
+            ethTokenPrice: document.getElementById('eth-token-price'),
+            ethBaseFee: document.getElementById('eth-base-fee'),
+            ethStorageGas: document.getElementById('eth-storage-gas'),
+            ethBlockSize: document.getElementById('eth-block-size'),
+            ethBlockTime: document.getElementById('eth-block-time'),
+            ethStatePct: document.getElementById('eth-state-pct'),
+            ethNodes: document.getElementById('eth-nodes'),
+            // Monad
+            monadTokenPrice: document.getElementById('monad-token-price'),
+            monadBaseFee: document.getElementById('monad-base-fee'),
+            monadStorageGas: document.getElementById('monad-storage-gas'),
+            monadBlockSize: document.getElementById('monad-block-size'),
+            monadBlockTime: document.getElementById('monad-block-time'),
+            monadStatePct: document.getElementById('monad-state-pct'),
+            monadNodes: document.getElementById('monad-nodes'),
+            // Shared
+            driveCost: document.getElementById('drive-cost'),
+            lifetimeMult: document.getElementById('lifetime-mult'),
+            diskOverhead: document.getElementById('disk-overhead')
+        };
+
+        // Output elements
+        const outputs = {
+            ethFeeRevenue: document.getElementById('eth-fee-revenue'),
+            ethInfraCost: document.getElementById('eth-infra-cost'),
+            monadFeeRevenue: document.getElementById('monad-fee-revenue'),
+            monadInfraCost: document.getElementById('monad-infra-cost'),
+            // Derived stats
+            ethBlocksYear: document.getElementById('eth-blocks-year'),
+            ethWritesBlock: document.getElementById('eth-writes-block'),
+            ethWritesYear: document.getElementById('eth-writes-year'),
+            ethStorageGrowth: document.getElementById('eth-storage-growth'),
+            monadBlocksYear: document.getElementById('monad-blocks-year'),
+            monadWritesBlock: document.getElementById('monad-writes-block'),
+            monadWritesYear: document.getElementById('monad-writes-year'),
+            monadStorageGrowth: document.getElementById('monad-storage-growth')
+        };
+
+        function parseNumber(value) {
+            // Strip commas, spaces, and other non-numeric characters (except . and -)
+            const cleaned = String(value).replace(/[^0-9.\-]/g, '');
+            const parsed = parseFloat(cleaned);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+
+        function formatCurrency(value) {
+            if (value >= 1e12) {
+                return '$' + (value / 1e12).toFixed(2) + ' T';
+            } else if (value >= 1e9) {
+                return '$' + (value / 1e9).toFixed(2) + ' B';
+            } else if (value >= 1e6) {
+                return '$' + (value / 1e6).toFixed(2) + ' M';
+            } else if (value >= 1e3) {
+                return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            } else {
+                return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+
+        function formatNumber(value) {
+            if (value >= 1e12) {
+                return (value / 1e12).toFixed(2) + ' T';
+            } else if (value >= 1e9) {
+                return (value / 1e9).toFixed(2) + ' B';
+            } else if (value >= 1e6) {
+                return (value / 1e6).toFixed(2) + ' M';
+            } else if (value >= 1e3) {
+                return (value / 1e3).toFixed(2) + ' K';
+            } else {
+                return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes >= 1e15) {
+                return (bytes / 1e15).toFixed(2) + ' PB';
+            } else if (bytes >= 1e12) {
+                return (bytes / 1e12).toFixed(2) + ' TB';
+            } else if (bytes >= 1e9) {
+                return (bytes / 1e9).toFixed(2) + ' GB';
+            } else if (bytes >= 1e6) {
+                return (bytes / 1e6).toFixed(2) + ' MB';
+            } else if (bytes >= 1e3) {
+                return (bytes / 1e3).toFixed(2) + ' KB';
+            } else {
+                return bytes.toFixed(0) + ' B';
+            }
+        }
+
+        function calculateChain(params, shared) {
+            // Block size in gas (input is in millions)
+            const blockSizeGas = params.blockSize * 1e6;
+
+            // Blocks per year
+            const blocksPerYear = SECONDS_PER_YEAR / params.blockTime;
+
+            // Total gas capacity per year
+            const gasPerYear = blockSizeGas * blocksPerYear;
+
+            // Storage gas per year (based on state write percentage)
+            const storageGasPerYear = gasPerYear * (params.statePct / 100);
+
+            // Storage gas per block
+            const storageGasPerBlock = blockSizeGas * (params.statePct / 100);
+
+            // Writes per block
+            const writesPerBlock = storageGasPerBlock / params.storageGas;
+
+            // Fee revenue per year
+            // storage_gas * base_fee_gwei * 1e-9 = native tokens
+            // native tokens * token_price = USD
+            const feeRevenue = storageGasPerYear * params.baseFee * 1e-9 * params.tokenPrice;
+
+            // Slots per year (writes per year)
+            const slotsPerYear = storageGasPerYear / params.storageGas;
+
+            // State growth in bytes
+            const stateGrowthBytes = slotsPerYear * shared.diskOverhead;
+
+            // State growth in TB
+            const stateGrowthTB = stateGrowthBytes / 1e12;
+
+            // Infrastructure cost per node per year
+            const infraCostPerNode = stateGrowthTB * shared.driveCost;
+
+            // Lifetime infrastructure cost (all nodes)
+            const lifetimeInfraCost = infraCostPerNode * params.nodes * shared.lifetimeMult;
+
+            return {
+                feeRevenue,
+                lifetimeInfraCost,
+                blocksPerYear,
+                writesPerBlock,
+                writesPerYear: slotsPerYear,
+                storageGrowthBytes: stateGrowthBytes
+            };
+        }
+
+        function recalculate() {
+            // Get shared parameters
+            const shared = {
+                driveCost: parseNumber(inputs.driveCost.value),
+                lifetimeMult: parseNumber(inputs.lifetimeMult.value),
+                diskOverhead: parseNumber(inputs.diskOverhead.value)
+            };
+
+            // Get Ethereum parameters
+            const ethParams = {
+                tokenPrice: parseNumber(inputs.ethTokenPrice.value),
+                baseFee: parseNumber(inputs.ethBaseFee.value),
+                storageGas: parseNumber(inputs.ethStorageGas.value),
+                blockSize: parseNumber(inputs.ethBlockSize.value),
+                blockTime: parseNumber(inputs.ethBlockTime.value),
+                statePct: parseNumber(inputs.ethStatePct.value),
+                nodes: parseNumber(inputs.ethNodes.value)
+            };
+
+            // Get Monad parameters
+            const monadParams = {
+                tokenPrice: parseNumber(inputs.monadTokenPrice.value),
+                baseFee: parseNumber(inputs.monadBaseFee.value),
+                storageGas: parseNumber(inputs.monadStorageGas.value),
+                blockSize: parseNumber(inputs.monadBlockSize.value),
+                blockTime: parseNumber(inputs.monadBlockTime.value),
+                statePct: parseNumber(inputs.monadStatePct.value),
+                nodes: parseNumber(inputs.monadNodes.value)
+            };
+
+            // Calculate
+            const ethResults = calculateChain(ethParams, shared);
+            const monadResults = calculateChain(monadParams, shared);
+
+            // Update outputs
+            outputs.ethFeeRevenue.textContent = formatCurrency(ethResults.feeRevenue);
+            outputs.ethInfraCost.textContent = formatCurrency(ethResults.lifetimeInfraCost);
+            outputs.monadFeeRevenue.textContent = formatCurrency(monadResults.feeRevenue);
+            outputs.monadInfraCost.textContent = formatCurrency(monadResults.lifetimeInfraCost);
+
+            // Update derived stats
+            outputs.ethBlocksYear.textContent = formatNumber(ethResults.blocksPerYear);
+            outputs.ethWritesBlock.textContent = formatNumber(ethResults.writesPerBlock);
+            outputs.ethWritesYear.textContent = formatNumber(ethResults.writesPerYear);
+            outputs.ethStorageGrowth.textContent = formatBytes(ethResults.storageGrowthBytes);
+            outputs.monadBlocksYear.textContent = formatNumber(monadResults.blocksPerYear);
+            outputs.monadWritesBlock.textContent = formatNumber(monadResults.writesPerBlock);
+            outputs.monadWritesYear.textContent = formatNumber(monadResults.writesPerYear);
+            outputs.monadStorageGrowth.textContent = formatBytes(monadResults.storageGrowthBytes);
+        }
+
+        // Add event listeners to all inputs
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', recalculate);
+        });
+
+        // Initial calculation
+        recalculate();
+    </script>
+</body>
+</html>
