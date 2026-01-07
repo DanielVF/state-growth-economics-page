@@ -305,7 +305,7 @@
 
                 <div class="outputs">
                     <div class="output-card">
-                        <div class="output-label">Storage Gas Fee Revenue Per Year</div>
+                        <div class="output-label">New Storage Gas Fee Revenue Per Year</div>
                         <div class="output-value" id="eth-fee-revenue">$0</div>
                     </div>
                     <div class="output-card">
@@ -332,14 +332,14 @@
                     <div class="input-row">
                         <label>Storage Gas</label>
                         <div class="input-wrapper">
-                            <input type="text" id="eth-storage-gas" value="23,520">
+                            <input type="text" id="eth-storage-gas" value="20,000">
                             <span class="input-unit">gas/slot</span>
                         </div>
                     </div>
                     <div class="input-row">
                         <label>Block Size</label>
                         <div class="input-wrapper">
-                            <input type="text" id="eth-block-size" value="60">
+                            <input type="text" id="eth-block-size" value="30">
                             <span class="input-unit">M gas</span>
                         </div>
                     </div>
@@ -353,12 +353,12 @@
                     <div class="input-row">
                         <label>State Write %</label>
                         <div class="input-wrapper">
-                            <input type="text" id="eth-state-pct" value="50">
+                            <input type="text" id="eth-state-pct" value="20">
                             <span class="input-unit">%</span>
                         </div>
                     </div>
                     <div class="input-row">
-                        <label>Nodes</label>
+                        <label>Actual Nodes</label>
                         <div class="input-wrapper">
                             <input type="text" id="eth-nodes" value="10,000">
                             <span class="input-unit">nodes</span>
@@ -373,7 +373,7 @@
 
                 <div class="outputs">
                     <div class="output-card">
-                        <div class="output-label">Storage Gas Fee Revenue Per Year</div>
+                        <div class="output-label">New Storage Gas Fee Revenue Per Year</div>
                         <div class="output-value" id="monad-fee-revenue">$0</div>
                     </div>
                     <div class="output-card">
@@ -421,12 +421,12 @@
                     <div class="input-row">
                         <label>State Write %</label>
                         <div class="input-wrapper">
-                            <input type="text" id="monad-state-pct" value="50">
+                            <input type="text" id="monad-state-pct" value="22">
                             <span class="input-unit">%</span>
                         </div>
                     </div>
                     <div class="input-row">
-                        <label>Nodes</label>
+                        <label>Actual Nodes</label>
                         <div class="input-wrapper">
                             <input type="text" id="monad-nodes" value="1,000">
                             <span class="input-unit">nodes</span>
@@ -456,9 +456,9 @@
                     </div>
                 </div>
                 <div class="input-row">
-                    <label>Disk Overhead</label>
+                    <label>Bytes Per Slot</label>
                     <div class="input-wrapper">
-                        <input type="text" id="disk-overhead" value="128">
+                        <input type="text" id="disk-overhead" value="83">
                         <span class="input-unit">bytes/slot</span>
                     </div>
                 </div>
@@ -487,6 +487,14 @@
                         <span class="label">Storage Growth per Year</span>
                         <span class="value" id="eth-storage-growth">0</span>
                     </div>
+                    <div class="derived-row">
+                        <span class="label">Revenue per Million Slot Stores</span>
+                        <span class="value" id="eth-revenue-per-million">$0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Cost per Million Slot Stores</span>
+                        <span class="value" id="eth-cost-per-million">$0</span>
+                    </div>
                 </div>
                 <div class="derived-chain monad">
                     <div class="derived-chain-header">Monad</div>
@@ -505,6 +513,14 @@
                     <div class="derived-row">
                         <span class="label">Storage Growth per Year</span>
                         <span class="value" id="monad-storage-growth">0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Revenue per Million Slot Stores</span>
+                        <span class="value" id="monad-revenue-per-million">$0</span>
+                    </div>
+                    <div class="derived-row">
+                        <span class="label">Cost per Million Slot Stores</span>
+                        <span class="value" id="monad-cost-per-million">$0</span>
                     </div>
                 </div>
             </div>
@@ -552,7 +568,11 @@
             monadBlocksYear: document.getElementById('monad-blocks-year'),
             monadWritesBlock: document.getElementById('monad-writes-block'),
             monadWritesYear: document.getElementById('monad-writes-year'),
-            monadStorageGrowth: document.getElementById('monad-storage-growth')
+            monadStorageGrowth: document.getElementById('monad-storage-growth'),
+            ethRevenuePerMillion: document.getElementById('eth-revenue-per-million'),
+            monadRevenuePerMillion: document.getElementById('monad-revenue-per-million'),
+            ethCostPerMillion: document.getElementById('eth-cost-per-million'),
+            monadCostPerMillion: document.getElementById('monad-cost-per-million')
         };
 
         function parseNumber(value) {
@@ -570,7 +590,7 @@
             } else if (value >= 1e6) {
                 return '$' + (value / 1e6).toFixed(2) + ' M';
             } else if (value >= 1e3) {
-                return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             } else {
                 return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
@@ -645,13 +665,19 @@
             // Lifetime infrastructure cost (all nodes)
             const lifetimeInfraCost = infraCostPerNode * params.nodes * shared.lifetimeMult;
 
+            // Revenue and cost per million slot stores
+            const revenuePerMillionSlots = slotsPerYear > 0 ? (feeRevenue / slotsPerYear) * 1e6 : 0;
+            const costPerMillionSlots = slotsPerYear > 0 ? (lifetimeInfraCost / slotsPerYear) * 1e6 : 0;
+
             return {
                 feeRevenue,
                 lifetimeInfraCost,
                 blocksPerYear,
                 writesPerBlock,
                 writesPerYear: slotsPerYear,
-                storageGrowthBytes: stateGrowthBytes
+                storageGrowthBytes: stateGrowthBytes,
+                revenuePerMillionSlots,
+                costPerMillionSlots
             };
         }
 
@@ -704,6 +730,10 @@
             outputs.monadWritesBlock.textContent = formatNumber(monadResults.writesPerBlock);
             outputs.monadWritesYear.textContent = formatNumber(monadResults.writesPerYear);
             outputs.monadStorageGrowth.textContent = formatBytes(monadResults.storageGrowthBytes);
+            outputs.ethRevenuePerMillion.textContent = formatCurrency(ethResults.revenuePerMillionSlots);
+            outputs.monadRevenuePerMillion.textContent = formatCurrency(monadResults.revenuePerMillionSlots);
+            outputs.ethCostPerMillion.textContent = formatCurrency(ethResults.costPerMillionSlots);
+            outputs.monadCostPerMillion.textContent = formatCurrency(monadResults.costPerMillionSlots);
         }
 
         // Add event listeners to all inputs

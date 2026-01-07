@@ -62,7 +62,7 @@ A single-page web application that compares the economics of state storage betwe
 │  SHARED PARAMETERS                                                  │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │ Drive Cost: [____]/TB   Lifetime Multiplier: [____]x        │   │
-│  │ Disk Overhead: [____] bytes/slot                            │   │
+│  │ Disk Usage: [____] bytes/slot                               │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
